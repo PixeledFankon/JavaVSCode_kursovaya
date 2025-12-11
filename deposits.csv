@@ -1,0 +1,4 @@
+Bank;Amount;Rate;Term;Capitalization
+Kaspi;10000;10;12;false
+Halyk;10000;20;12;false
+Jusan;10000;15;12;false

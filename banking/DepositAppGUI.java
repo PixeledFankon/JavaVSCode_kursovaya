@@ -7,6 +7,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,6 +32,7 @@ public class DepositAppGUI extends JFrame {
         super("Deposit Comparison Tool");
         this.db = new DepositDatabase();
         initUI();
+        loadDepositsFromCsv("JavaVSCode_kursovaya/deposits.csv");
         logger.info("DepositAppGUI window created");
     }
 
@@ -56,7 +61,7 @@ public class DepositAppGUI extends JFrame {
         row++;
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Amount:"), gbc);
+        formPanel.add(new JLabel("Amount (KZT):"), gbc);
         gbc.gridx = 1;
         formPanel.add(amountField, gbc);
         row++;
@@ -78,7 +83,7 @@ public class DepositAppGUI extends JFrame {
         row++;
 
         tableModel = new DefaultTableModel(
-                new Object[]{"Bank", "Amount", "Rate %", "Term", "Capitalization", "Income"}, 0
+                new Object[]{"Bank", "Amount (KZT)", "Rate %", "Term (months)", "Capitalization", "Income (KZT)"}, 0
         );
         JTable table = new JTable(tableModel);
         JScrollPane tableScroll = new JScrollPane(table);
@@ -100,6 +105,48 @@ public class DepositAppGUI extends JFrame {
         getContentPane().add(formPanel, BorderLayout.NORTH);
         getContentPane().add(tableScroll, BorderLayout.CENTER);
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void addDepositToTable(Deposit d) {
+        double income = DepositCalculator.calculateIncome(d);
+        tableModel.addRow(new Object[]{
+                d.getBankName(),
+                String.format("%.2f", d.getAmount()),
+                String.format("%.2f", d.getInterestRate()),
+                d.getTermMonths(),
+                d.isWithCapitalization() ? "Yes" : "No",
+                String.format("%.2f", income)
+        });
+    }
+
+    private void loadDepositsFromCsv(String fileName) {
+        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+            String line = br.readLine();
+
+            while ((line = br.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                String[] parts = line.split(";");
+                if (parts.length < 5) {
+                    logger.warn("Incorrect CSV line: " + line);
+                    continue;
+                }
+
+                String bank = parts[0].trim();
+                double amount = Double.parseDouble(parts[1].trim());
+                double rate = Double.parseDouble(parts[2].trim());
+                int term = Integer.parseInt(parts[3].trim());
+                boolean cap = Boolean.parseBoolean(parts[4].trim());
+
+                Deposit d = new Deposit(bank, amount, rate, term, cap);
+                db.addDeposit(d);
+                addDepositToTable(d);
+            }
+
+            logger.info("Initial deposits loaded from CSV file: " + fileName);
+        } catch (IOException | NumberFormatException ex) {
+            logger.error("Error while loading deposits from CSV: " + fileName, ex);
+        }
     }
 
     private void addDeposit() {
@@ -127,17 +174,7 @@ public class DepositAppGUI extends JFrame {
                     + ", term=" + term
                     + ", capitalization=" + cap);
 
-            double income = DepositCalculator.calculateIncome(d);
-
-            tableModel.addRow(new Object[]{
-                    d.getBankName(),
-                    String.format("%.2f", d.getAmount()),
-                    String.format("%.2f", d.getInterestRate()),
-                    d.getTermMonths(),
-                    d.isWithCapitalization() ? "Yes" : "No",
-                    String.format("%.2f", income)
-            });
-
+            addDepositToTable(d);
             clearInputFields();
 
         } catch (NumberFormatException ex) {
@@ -165,15 +202,7 @@ public class DepositAppGUI extends JFrame {
         tableModel.setRowCount(0);
 
         for (Deposit d : list) {
-            double income = DepositCalculator.calculateIncome(d);
-            tableModel.addRow(new Object[]{
-                    d.getBankName(),
-                    String.format("%.2f", d.getAmount()),
-                    String.format("%.2f", d.getInterestRate()),
-                    d.getTermMonths(),
-                    d.isWithCapitalization() ? "Yes" : "No",
-                    String.format("%.2f", income)
-            });
+            addDepositToTable(d);
         }
 
         logger.info("Deposits sorted by income, count=" + list.size());

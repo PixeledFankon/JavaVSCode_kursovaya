@@ -1,7 +1,7 @@
 package banking;
 
 public class Deposit {
-    
+
     private String bankName;
     private double amount;
     private double interestRate;
@@ -17,18 +17,35 @@ public class Deposit {
         this.withCapitalization = withCapitalization;
     }
 
-    public String getBankName() { return bankName; }
-    public double getAmount() { return amount; }
-    public double getInterestRate() { return interestRate; }
-    public int getTermMonths() { return termMonths; }
-    public boolean isWithCapitalization() { return withCapitalization; }
+    public String getBankName() {
+        return bankName;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public double getInterestRate() {
+        return interestRate;
+    }
+
+    public int getTermMonths() {
+        return termMonths;
+    }
+
+    public boolean isWithCapitalization() {
+        return withCapitalization;
+    }
 
     @Override
     public String toString() {
         return String.format(
-            "Банк: %s | Сумма: %.2f | Ставка: %.2f%% | Срок: %d мес | Капитализация: %s",
-            bankName, amount, interestRate, termMonths,
-            withCapitalization ? "да" : "нет"
+                "Банк: %s | Сумма: %.2f | Ставка: %.2f%% | Срок: %d мес | Капитализация: %s",
+                bankName,
+                amount,
+                interestRate,
+                termMonths,
+                withCapitalization ? "да" : "нет"
         );
     }
 }
